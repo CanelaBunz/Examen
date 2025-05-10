@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Botón Cámara -->
+        <Button
+            android:id="@+id/btnCamera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cámara"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Botón Sensores -->
+        <Button
+            android:id="@+id/btnSensors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sensores"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Botón Red/JSON -->
+        <Button
+            android:id="@+id/btnNetwork"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Red/JSON"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Botón PHP -->
+        <Button
+            android:id="@+id/btnPhp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Intercambio PHP"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Botón REST -->
+        <Button
+            android:id="@+id/btnRest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="REST API"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Botón Geolocalización -->
+        <Button
+            android:id="@+id/btnGeolocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Geolocalización"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Botón Persistencia -->
+        <Button
+            android:id="@+id/btnPersistence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Persistencia de Datos"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+    </LinearLayout>
+</ScrollView>
