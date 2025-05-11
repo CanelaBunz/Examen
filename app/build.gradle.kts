@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-kapt") // Solo declara el ID, sin versión
 }
 
 android {
@@ -34,7 +35,6 @@ android {
         jvmTarget = "11"
     }
 
-    // Necesario para usar View Binding si lo necesitas
     buildFeatures {
         viewBinding = true
     }
@@ -47,28 +47,37 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
 
-    // Dependencias para Google Maps y Location Services
+    // Google Services
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)
 
-    // Dependencias de testing
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Retrofit para llamadas HTTP
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
 
-    // Glide para carga de imágenes
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+    // Image Loading
+    implementation(libs.glide)
+    kapt(libs.glide.compiler) // Usa kapt para Glide
 
-    // RecyclerView
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    // UI
+    implementation(libs.androidx.recyclerview)
 
-    // Coroutines (opcional pero recomendado para manejo de hilos)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
 
+    // Room components
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler) // Usa kapt para Room
+    implementation(libs.androidx.room.ktx)
+
+    // Lifecycle components
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
 }
