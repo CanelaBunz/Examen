@@ -32,6 +32,10 @@
             android:name=".GeolocationActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".RestActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAWEVnQ2lT9HsFE8ZRAvu29NtEYRsIpE1w" />
