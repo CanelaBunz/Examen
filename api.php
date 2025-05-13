@@ -1,179 +1,113 @@
 <?php
-// Configuración de cabeceras para permitir CORS y especificar tipo de contenido
+// Configuración básica para permitir peticiones desde cualquier origen
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST, GET");
-header("Access-Control-Max-Age: 3600");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type");
 
-// Verificar el método de la solicitud
-$request_method = $_SERVER["REQUEST_METHOD"];
+// Datos de conexión a la base de datos
+$servername = "localhost";
+$username = "root";
+$password = "onepiecedeidad";
+$dbname = "datos_app";
 
-// Si es una solicitud GET, devolver todos los registros
-if($request_method == "GET") {
-    // Conectar a la base de datos MySQL
-    $servername = "localhost";
-    $username = "root"; // Reemplazar con tu usuario de MySQL
-    $password = "Eduardo2003"; // Reemplazar con tu contraseña de MySQL
-    $dbname = "datos_app"; // Reemplazar con el nombre de tu base de datos
+// Función para enviar respuesta JSON
+function enviarRespuesta($codigo, $exito, $mensaje, $datos = null) {
+    http_response_code($codigo);
+    $respuesta = array(
+        "success" => $exito,
+        "message" => $mensaje
+    );
 
-    // Crear conexión
-    $conn = new mysqli($servername, $username, $password, $dbname);
-
-    // Verificar conexión
-    if ($conn->connect_error) {
-        http_response_code(500); // Internal Server Error
-        echo json_encode(array(
-            "success" => false,
-            "message" => "Error de conexión a la base de datos: " . $conn->connect_error
-        ));
-        exit;
+    if ($datos !== null) {
+        $respuesta = array_merge($respuesta, $datos);
     }
 
-    // Preparar la consulta SQL para obtener todos los registros
+    echo json_encode($respuesta);
+    exit;
+}
+
+// Conectar a la base de datos
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) {
+    enviarRespuesta(500, false, "Error de conexión: " . $conn->connect_error);
+}
+
+// Procesar según el método de la solicitud
+$metodo = $_SERVER["REQUEST_METHOD"];
+
+// Obtener todos los registros (GET)
+if ($metodo == "GET") {
     $sql = "SELECT * FROM usuarios ORDER BY fecha DESC";
     $result = $conn->query($sql);
 
-    if ($result) {
-        $records = array();
-        while($row = $result->fetch_assoc()) {
-            $records[] = $row;
-        }
-
-        // Enviar respuesta
-        http_response_code(200); // OK
-        echo json_encode(array(
-            "success" => true,
-            "message" => "Registros obtenidos correctamente",
-            "records" => $records
-        ));
-    } else {
-        // Error al obtener registros
-        http_response_code(500); // Internal Server Error
-        echo json_encode(array(
-            "success" => false,
-            "message" => "Error al obtener registros: " . $conn->error
-        ));
+    if (!$result) {
+        enviarRespuesta(500, false, "Error al obtener registros: " . $conn->error);
     }
 
-    // Cerrar la conexión
-    $conn->close();
-    exit;
+    $registros = array();
+    while ($fila = $result->fetch_assoc()) {
+        $registros[] = $fila;
+    }
+
+    enviarRespuesta(200, true, "Registros obtenidos correctamente", array("records" => $registros));
 }
 
-// Si es una solicitud POST, procesar los datos enviados
-// Obtener el contenido JSON enviado en la solicitud
-$input_data = file_get_contents("php://input");
+// Guardar un nuevo registro (POST)
+if ($metodo == "POST") {
+    // Obtener y decodificar datos JSON
+    $datos_json = file_get_contents("php://input");
+    $datos = json_decode($datos_json, true);
 
-// Decodificar el JSON a un array asociativo de PHP
-$data = json_decode($input_data, true);
+    // Verificar si el JSON es válido
+    if ($datos === null) {
+        enviarRespuesta(400, false, "Error en formato JSON: " . json_last_error_msg());
+    }
 
-// Verificar si se pudo decodificar el JSON
-if ($data === null) {
-    // Error al decodificar el JSON
-    http_response_code(400); // Bad Request
-    echo json_encode(array(
-        "success" => false,
-        "message" => "Error al decodificar el JSON. Verifique el formato.",
-        "error" => json_last_error_msg()
-    ));
-    exit;
-}
+    // Verificar campos requeridos
+    if (!isset($datos['name']) || !isset($datos['age']) || !isset($datos['message'])) {
+        enviarRespuesta(400, false, "Faltan campos requeridos (name, age, message)");
+    }
 
-// Verificar que todos los campos requeridos estén presentes
-if (!isset($data['name']) || !isset($data['age']) || !isset($data['message'])) {
-    http_response_code(400); // Bad Request
-    echo json_encode(array(
-        "success" => false,
-        "message" => "Faltan campos requeridos (name, age, message)."
-    ));
-    exit;
-}
+    // Limpiar y validar datos
+    $nombre = trim($datos['name']);
+    $edad = trim($datos['age']);
+    $mensaje = trim($datos['message']);
 
-// Validar los datos recibidos
-$name = trim($data['name']);
-$age = trim($data['age']);
-$message = trim($data['message']);
+    // Validar que no estén vacíos
+    if (empty($nombre) || empty($edad) || empty($mensaje)) {
+        enviarRespuesta(400, false, "Todos los campos son obligatorios");
+    }
 
-// Validar que los campos no estén vacíos
-if (empty($name) || empty($age) || empty($message)) {
-    http_response_code(400); // Bad Request
-    echo json_encode(array(
-        "success" => false,
-        "message" => "Todos los campos son obligatorios y no pueden estar vacíos."
-    ));
-    exit;
-}
+    // Validar edad
+    if (!is_numeric($edad) || $edad < 0 || $edad > 120) {
+        enviarRespuesta(400, false, "La edad debe ser un número entre 0 y 120");
+    }
 
-// Validar rango de edad
-if (!is_numeric($age) || $age < 0 || $age > 120) {
-    http_response_code(400); // Bad Request
-    echo json_encode(array(
-        "success" => false,
-        "message" => "La edad debe ser un número entre 0 y 120."
-    ));
-    exit;
-}
+    // Insertar en la base de datos
+    $fecha = date("Y-m-d H:i:s");
+    $stmt = $conn->prepare("INSERT INTO usuarios (nombre, edad, mensaje, fecha) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("siss", $nombre, $edad, $mensaje, $fecha);
 
-// En este punto, los datos son válidos
-// Conectar a la base de datos MySQL
-$servername = "localhost";
-$username = "root"; // Reemplazar con tu usuario de MySQL
-$password = "Eduardo2003"; // Reemplazar con tu contraseña de MySQL
-$dbname = "datos_app"; // Reemplazar con el nombre de tu base de datos
+    if (!$stmt->execute()) {
+        enviarRespuesta(500, false, "Error al guardar datos: " . $stmt->error);
+    }
 
-// Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    http_response_code(500); // Internal Server Error
-    echo json_encode(array(
-        "success" => false,
-        "message" => "Error de conexión a la base de datos: " . $conn->connect_error
-    ));
-
-    exit;
-}
-
-// Preparar la consulta SQL para insertar datos
-$stmt = $conn->prepare("INSERT INTO usuarios (nombre, edad, mensaje, fecha) VALUES (?, ?, ?, ?)");
-$timestamp = date("Y-m-d H:i:s");
-
-// Vincular parámetros
-$stmt->bind_param("siss", $name, $age, $message, $timestamp);
-
-// Ejecutar la consulta
-if ($stmt->execute()) {
-    // Procesamiento exitoso
-    $response = array(
-        "success" => true,
-        "message" => "Datos guardados correctamente en la base de datos",
+    // Datos guardados correctamente
+    $datos_respuesta = array(
         "data" => array(
-            "name" => $name,
-            "age" => $age,
-            "message" => $message,
-            "timestamp" => $timestamp,
+            "name" => $nombre,
+            "age" => $edad,
+            "message" => $mensaje,
+            "timestamp" => $fecha,
             "server_info" => "PHP " . phpversion()
         )
     );
-} else {
-    // Error al guardar en la base de datos
-    http_response_code(500); // Internal Server Error
-    echo json_encode(array(
-        "success" => false,
-        "message" => "Error al guardar datos en la base de datos: " . $stmt->error
-    ));
+
     $stmt->close();
-    $conn->close();
-    exit;
+    enviarRespuesta(200, true, "Datos guardados correctamente", $datos_respuesta);
 }
 
-// Cerrar la conexión
-$stmt->close();
-$conn->close();
-
-// Enviar respuesta
-http_response_code(200); // OK
-echo json_encode($response);
+// Si llegamos aquí, el método no está soportado
+enviarRespuesta(405, false, "Método no permitido");
 ?>

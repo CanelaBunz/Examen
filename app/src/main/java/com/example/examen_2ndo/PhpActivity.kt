@@ -21,6 +21,7 @@ import java.net.URL
 
 class PhpActivity : AppCompatActivity() {
 
+    // Variables para los elementos de la interfaz
     private lateinit var nameEditText: EditText
     private lateinit var ageEditText: EditText
     private lateinit var messageEditText: EditText
@@ -29,12 +30,15 @@ class PhpActivity : AppCompatActivity() {
     private lateinit var statusTextView: TextView
     private lateinit var responseTextView: TextView
     private lateinit var progressBar: ProgressBar
+    
+    // URL del servidor
+    private val serverUrl = "http://10.182.3.20/api.php"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_php)
 
-        // Inicializar vistas
+        // Encontrar los elementos de la interfaz
         nameEditText = findViewById(R.id.nameEditText)
         ageEditText = findViewById(R.id.ageEditText)
         messageEditText = findViewById(R.id.messageEditText)
@@ -44,46 +48,51 @@ class PhpActivity : AppCompatActivity() {
         responseTextView = findViewById(R.id.responseTextView)
         progressBar = findViewById(R.id.progressBar)
 
-        // Configurar listener del botón de enviar datos
+        // Botón para enviar datos
         sendButton.setOnClickListener {
-            if (validateInputs()) {
-                sendDataToServer()
+            if (validarDatos()) {
+                enviarDatos()
             }
         }
 
-        // Configurar listener del botón de obtener todos los registros
+        // Botón para obtener registros
         getAllRecordsButton.setOnClickListener {
-            getAllRecordsFromServer()
+            obtenerRegistros()
         }
     }
 
-    private fun validateInputs(): Boolean {
-        val name = nameEditText.text.toString().trim()
-        val ageStr = ageEditText.text.toString().trim()
-        val message = messageEditText.text.toString().trim()
+    // Validar que los datos ingresados sean correctos
+    private fun validarDatos(): Boolean {
+        val nombre = nameEditText.text.toString().trim()
+        val edadTexto = ageEditText.text.toString().trim()
+        val mensaje = messageEditText.text.toString().trim()
 
-        if (name.isEmpty()) {
+        // Validar nombre
+        if (nombre.isEmpty()) {
             nameEditText.error = "El nombre es requerido"
             return false
         }
 
-        if (ageStr.isEmpty()) {
+        // Validar edad
+        if (edadTexto.isEmpty()) {
             ageEditText.error = "La edad es requerida"
             return false
         }
 
+        // Comprobar que la edad sea un número válido
         try {
-            val age = ageStr.toInt()
-            if (age < 0 || age > 120) {
+            val edad = edadTexto.toInt()
+            if (edad < 0 || edad > 120) {
                 ageEditText.error = "La edad debe estar entre 0 y 120 años"
                 return false
             }
         } catch (e: NumberFormatException) {
-            ageEditText.error = "La edad debe ser un número válido"
+            ageEditText.error = "La edad debe ser un número"
             return false
         }
 
-        if (message.isEmpty()) {
+        // Validar mensaje
+        if (mensaje.isEmpty()) {
             messageEditText.error = "El mensaje es requerido"
             return false
         }
@@ -91,99 +100,79 @@ class PhpActivity : AppCompatActivity() {
         return true
     }
 
-    private fun sendDataToServer() {
-        // Mostrar progreso
+    // Enviar datos al servidor
+    private fun enviarDatos() {
+        // Mostrar barra de progreso
         progressBar.visibility = View.VISIBLE
         statusTextView.text = "Estado: Enviando datos..."
 
         // Crear objeto JSON con los datos
-        val jsonObject = JSONObject()
-        jsonObject.put("name", nameEditText.text.toString().trim())
-        jsonObject.put("age", ageEditText.text.toString().trim())
-        jsonObject.put("message", messageEditText.text.toString().trim())
+        val datosJson = JSONObject()
+        datosJson.put("name", nameEditText.text.toString().trim())
+        datosJson.put("age", ageEditText.text.toString().trim())
+        datosJson.put("message", messageEditText.text.toString().trim())
 
-        // Usar coroutines para operaciones de red
+        // Usar corrutina para no bloquear la interfaz
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // URL del servidor PHP (reemplazar con la URL real donde se aloje api.php)
-                // Nota: Esta URL debe ser actualizada con la dirección donde se aloje el script api.php
-                // Para un servidor Linux con Apache2, la URL podría ser algo como:
-                // "http://tu-ip-o-dominio/api.php" o "http://192.168.1.x/api.php" (red local)
-                val url = URL("http://192.168.1.84/api.php")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.setRequestProperty("Accept", "application/json")
-                connection.doOutput = true
-                connection.doInput = true
+                // Configurar conexión HTTP
+                val url = URL(serverUrl)
+                val conexion = url.openConnection() as HttpURLConnection
+                conexion.requestMethod = "POST"
+                conexion.setRequestProperty("Content-Type", "application/json")
+                conexion.doOutput = true
+                conexion.doInput = true
 
-                // Enviar datos JSON
-                val outputStreamWriter = OutputStreamWriter(connection.outputStream)
-                outputStreamWriter.write(jsonObject.toString())
-                outputStreamWriter.flush()
+                // Enviar datos
+                val escritor = OutputStreamWriter(conexion.outputStream)
+                escritor.write(datosJson.toString())
+                escritor.flush()
 
                 // Leer respuesta
-                val responseCode = connection.responseCode
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val inputStream = connection.inputStream
-                    val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-                    val stringBuilder = StringBuilder()
-                    var line: String?
+                val codigoRespuesta = conexion.responseCode
+                val respuesta = leerRespuesta(conexion)
 
-                    while (bufferedReader.readLine().also { line = it } != null) {
-                        stringBuilder.append(line)
-                    }
-
-                    bufferedReader.close()
-                    inputStream.close()
-
-                    // Procesar respuesta en el hilo principal
-                    withContext(Dispatchers.Main) {
-                        try {
-                            val jsonResponse = JSONObject(stringBuilder.toString())
-                            val success = jsonResponse.optBoolean("success", false)
-                            val message = jsonResponse.optString("message", "No message")
-
-                            if (success) {
-                                statusTextView.text = "Estado: Datos enviados correctamente"
-                                responseTextView.text = "Respuesta: $message\n\nJSON completo:\n${jsonResponse.toString(4)}"
-
-                                // Limpiar campos si fue exitoso
-                                nameEditText.text.clear()
-                                ageEditText.text.clear()
-                                messageEditText.text.clear()
-                            } else {
-                                statusTextView.text = "Estado: Error en el servidor"
-                                responseTextView.text = "Error: $message\n\nJSON completo:\n${jsonResponse.toString(4)}"
-                            }
-                        } catch (e: Exception) {
-                            statusTextView.text = "Estado: Error al procesar la respuesta"
-                            responseTextView.text = "Error: ${e.message}\n\nRespuesta cruda:\n$stringBuilder"
+                // Actualizar interfaz en el hilo principal
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
+                    
+                    if (codigoRespuesta == HttpURLConnection.HTTP_OK) {
+                        val jsonRespuesta = JSONObject(respuesta)
+                        val exito = jsonRespuesta.optBoolean("success", false)
+                        val mensaje = jsonRespuesta.optString("message", "Sin mensaje")
+                        
+                        if (exito) {
+                            // Éxito - limpiar campos
+                            statusTextView.text = "Estado: Datos enviados correctamente"
+                            responseTextView.text = "Respuesta: $mensaje\n\n$respuesta"
+                            
+                            nameEditText.text.clear()
+                            ageEditText.text.clear()
+                            messageEditText.text.clear()
+                        } else {
+                            // Error del servidor
+                            statusTextView.text = "Estado: Error en el servidor"
+                            responseTextView.text = "Error: $mensaje\n\n$respuesta"
                         }
-
-                        progressBar.visibility = View.GONE
-                    }
-                } else {
-                    // Manejar error en el hilo principal
-                    withContext(Dispatchers.Main) {
-                        statusTextView.text = "Estado: Error en la conexión"
-                        responseTextView.text = "Error: Código de respuesta $responseCode"
-                        progressBar.visibility = View.GONE
+                    } else {
+                        // Error de conexión
+                        statusTextView.text = "Estado: Error de conexión"
+                        responseTextView.text = "Error: Código $codigoRespuesta\n\n$respuesta"
                     }
                 }
-
-                connection.disconnect()
-
+                
+                conexion.disconnect()
+                
             } catch (e: Exception) {
-                // Manejar excepción en el hilo principal
+                // Manejar errores
                 withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
                     statusTextView.text = "Estado: Error de conexión"
                     responseTextView.text = "Error: ${e.message}"
-                    progressBar.visibility = View.GONE
-
+                    
                     Toast.makeText(
                         this@PhpActivity,
-                        "Error de conexión: ${e.message}",
+                        "Error: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -191,102 +180,104 @@ class PhpActivity : AppCompatActivity() {
         }
     }
 
-    private fun getAllRecordsFromServer() {
-        // Mostrar progreso
+    // Obtener todos los registros del servidor
+    private fun obtenerRegistros() {
+        // Mostrar barra de progreso
         progressBar.visibility = View.VISIBLE
         statusTextView.text = "Estado: Obteniendo registros..."
 
-        // Usar coroutines para operaciones de red
+        // Usar corrutina para no bloquear la interfaz
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // URL del servidor PHP
-                val url = URL("http://192.168.1.84/api.php")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Accept", "application/json")
-                connection.doInput = true
+                // Configurar conexión HTTP
+                val url = URL(serverUrl)
+                val conexion = url.openConnection() as HttpURLConnection
+                conexion.requestMethod = "GET"
+                conexion.setRequestProperty("Accept", "application/json")
+                conexion.doInput = true
 
                 // Leer respuesta
-                val responseCode = connection.responseCode
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val inputStream = connection.inputStream
-                    val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-                    val stringBuilder = StringBuilder()
-                    var line: String?
+                val codigoRespuesta = conexion.responseCode
+                val respuesta = leerRespuesta(conexion)
 
-                    while (bufferedReader.readLine().also { line = it } != null) {
-                        stringBuilder.append(line)
-                    }
-
-                    bufferedReader.close()
-                    inputStream.close()
-
-                    // Procesar respuesta en el hilo principal
-                    withContext(Dispatchers.Main) {
-                        try {
-                            val jsonResponse = JSONObject(stringBuilder.toString())
-                            val success = jsonResponse.optBoolean("success", false)
-                            val message = jsonResponse.optString("message", "No message")
-
-                            if (success) {
-                                val records = jsonResponse.optJSONArray("records")
-                                if (records != null && records.length() > 0) {
-                                    // Construir una cadena formateada con todos los registros
-                                    val formattedRecords = StringBuilder()
-                                    formattedRecords.append("REGISTROS DE LA BASE DE DATOS:\n\n")
-
-                                    for (i in 0 until records.length()) {
-                                        val record = records.getJSONObject(i)
-                                        formattedRecords.append("ID: ${record.optString("id", "N/A")}\n")
-                                        formattedRecords.append("Nombre: ${record.optString("nombre", "N/A")}\n")
-                                        formattedRecords.append("Edad: ${record.optString("edad", "N/A")}\n")
-                                        formattedRecords.append("Mensaje: ${record.optString("mensaje", "N/A")}\n")
-                                        formattedRecords.append("Fecha: ${record.optString("fecha", "N/A")}\n")
-                                        formattedRecords.append("------------------------\n")
-                                    }
-
-                                    statusTextView.text = "Estado: Registros obtenidos correctamente"
-                                    responseTextView.text = formattedRecords.toString()
-                                } else {
-                                    statusTextView.text = "Estado: No hay registros en la base de datos"
-                                    responseTextView.text = "No se encontraron registros en la base de datos."
+                // Actualizar interfaz en el hilo principal
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
+                    
+                    if (codigoRespuesta == HttpURLConnection.HTTP_OK) {
+                        val jsonRespuesta = JSONObject(respuesta)
+                        val exito = jsonRespuesta.optBoolean("success", false)
+                        
+                        if (exito) {
+                            val registros = jsonRespuesta.optJSONArray("records")
+                            
+                            if (registros != null && registros.length() > 0) {
+                                // Mostrar registros
+                                val textoRegistros = StringBuilder()
+                                textoRegistros.append("REGISTROS DE LA BASE DE DATOS:\n\n")
+                                
+                                for (i in 0 until registros.length()) {
+                                    val registro = registros.getJSONObject(i)
+                                    textoRegistros.append("ID: ${registro.optString("id", "N/A")}\n")
+                                    textoRegistros.append("Nombre: ${registro.optString("nombre", "N/A")}\n")
+                                    textoRegistros.append("Edad: ${registro.optString("edad", "N/A")}\n")
+                                    textoRegistros.append("Mensaje: ${registro.optString("mensaje", "N/A")}\n")
+                                    textoRegistros.append("Fecha: ${registro.optString("fecha", "N/A")}\n")
+                                    textoRegistros.append("------------------------\n")
                                 }
+                                
+                                statusTextView.text = "Estado: Registros obtenidos correctamente"
+                                responseTextView.text = textoRegistros.toString()
                             } else {
-                                statusTextView.text = "Estado: Error en el servidor"
-                                responseTextView.text = "Error: $message\n\nJSON completo:\n${jsonResponse.toString(4)}"
+                                statusTextView.text = "Estado: No hay registros"
+                                responseTextView.text = "No se encontraron registros en la base de datos."
                             }
-                        } catch (e: Exception) {
-                            statusTextView.text = "Estado: Error al procesar la respuesta"
-                            responseTextView.text = "Error: ${e.message}\n\nRespuesta cruda:\n$stringBuilder"
+                        } else {
+                            // Error del servidor
+                            val mensaje = jsonRespuesta.optString("message", "Sin mensaje")
+                            statusTextView.text = "Estado: Error en el servidor"
+                            responseTextView.text = "Error: $mensaje\n\n$respuesta"
                         }
-
-                        progressBar.visibility = View.GONE
-                    }
-                } else {
-                    // Manejar error en el hilo principal
-                    withContext(Dispatchers.Main) {
-                        statusTextView.text = "Estado: Error en la conexión"
-                        responseTextView.text = "Error: Código de respuesta $responseCode"
-                        progressBar.visibility = View.GONE
+                    } else {
+                        // Error de conexión
+                        statusTextView.text = "Estado: Error de conexión"
+                        responseTextView.text = "Error: Código $codigoRespuesta\n\n$respuesta"
                     }
                 }
-
-                connection.disconnect()
-
+                
+                conexion.disconnect()
+                
             } catch (e: Exception) {
-                // Manejar excepción en el hilo principal
+                // Manejar errores
                 withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
                     statusTextView.text = "Estado: Error de conexión"
                     responseTextView.text = "Error: ${e.message}"
-                    progressBar.visibility = View.GONE
-
+                    
                     Toast.makeText(
                         this@PhpActivity,
-                        "Error de conexión: ${e.message}",
+                        "Error: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
             }
         }
+    }
+
+    // Función auxiliar para leer la respuesta HTTP
+    private fun leerRespuesta(conexion: HttpURLConnection): String {
+        val inputStream = conexion.inputStream
+        val reader = BufferedReader(InputStreamReader(inputStream))
+        val respuesta = StringBuilder()
+        var linea: String?
+        
+        while (reader.readLine().also { linea = it } != null) {
+            respuesta.append(linea)
+        }
+        
+        reader.close()
+        inputStream.close()
+        
+        return respuesta.toString()
     }
 }
