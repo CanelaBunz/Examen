@@ -12,32 +12,15 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <!-- Botón Cámara -->
+        <!-- Botón Cámara y Sensores -->
         <Button
-            android:id="@+id/btnCamera"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Cámara"
-            android:layout_marginBottom="8dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+           android:id="@+id/btnCameraSensor"
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:text="Cámara y Sensores"
+           android:layout_marginBottom="8dp"
+           style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
-        <!-- Botón Sensores -->
-        <Button
-            android:id="@+id/btnSensors"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Sensores"
-            android:layout_marginBottom="8dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-        <!-- Botón Red/JSON -->
-        <Button
-            android:id="@+id/btnNetwork"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Red/JSON"
-            android:layout_marginBottom="8dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
         <!-- Botón PHP -->
         <Button

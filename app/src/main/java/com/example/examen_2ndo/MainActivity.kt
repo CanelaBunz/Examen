@@ -13,64 +13,46 @@ import androidx.core.content.ContextCompat
 
 
 class MainActivity : AppCompatActivity() {
+
+    // Variables para la cámara y sensores (no se usan aquí, se han movido a CameraSensorActivity)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Inicializar botones
-        val btnCamera = findViewById<Button>(R.id.btnCamera)
-        val btnSensors = findViewById<Button>(R.id.btnSensors)
-        val btnNetwork = findViewById<Button>(R.id.btnNetwork)
+        // Inicializar botones de la pantalla principal
         val btnPhp = findViewById<Button>(R.id.btnPhp)
         val btnRest = findViewById<Button>(R.id.btnRest)
         val btnGeolocation = findViewById<Button>(R.id.btnGeolocation)
         val btnPersistence = findViewById<Button>(R.id.btnPersistence)
+        val btnCameraSensor = findViewById<Button>(R.id.btnCameraSensor)
 
-        // Configurar listeners
-        btnCamera.setOnClickListener { v: View? -> openCameraActivity() }
-        btnSensors.setOnClickListener { v: View? -> openSensorsActivity() }
-        btnNetwork.setOnClickListener { v: View? -> openNetworkActivity() }
+        // No se necesita código adicional aquí, los botones ya están definidos en el layout XML
+
+        // Configurar los eventos de click para cada botón
         btnPhp.setOnClickListener { v: View? -> openPhpActivity() }
         btnRest.setOnClickListener { v: View? -> openRestActivity() }
         btnGeolocation.setOnClickListener { v: View? -> checkPermissionsAndOpenGeolocation() }
         btnPersistence.setOnClickListener { v: View? -> openPersistenceActivity() }
+        btnCameraSensor.setOnClickListener { v: View? -> openCameraSensorActivity() }
     }
 
-    private fun openCameraActivity() {
-        val intent = Intent(
-            this,
-            CameraActivity::class.java
-        )
-        startActivity(intent)
-    }
 
-    private fun openSensorsActivity() {
-        val intent = Intent(
-            this,
-            SensorsActivity::class.java
-        )
-        startActivity(intent)
-    }
 
-    private fun openNetworkActivity() {
-        val intent = Intent(
-            this,
-            NetworkActivity::class.java
-        )
-        startActivity(intent)
-    }
-
+    // Método para abrir la actividad de PHP
     private fun openPhpActivity() {
         val intent = Intent(this, PhpActivity::class.java)
         startActivity(intent)
     }
 
+    // Método para abrir la actividad REST
     private fun openRestActivity() {
         val intent = Intent(this, RestActivity::class.java)
         startActivity(intent)
     }
 
+    // Método para verificar permisos de ubicación antes de abrir la actividad de geolocalización
     private fun checkPermissionsAndOpenGeolocation() {
+        // Verificar si tenemos los permisos necesarios
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -80,6 +62,7 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            // Si no tenemos permisos, los solicitamos al usuario
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(
@@ -89,15 +72,18 @@ class MainActivity : AppCompatActivity() {
                 PERMISSION_REQUEST_CODE
             )
         } else {
+            // Si ya tenemos permisos, abrimos la actividad
             openGeolocationActivity()
         }
     }
 
+    // Método para abrir la actividad de geolocalización
     private fun openGeolocationActivity() {
         val intent = Intent(this, GeolocationActivity::class.java)
         startActivity(intent)
     }
 
+    // Método para abrir la actividad de persistencia
     private fun openPersistenceActivity() {
         val intent = Intent(
             this,
@@ -106,6 +92,14 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    // Método para abrir la actividad de cámara y sensores
+    private fun openCameraSensorActivity() {
+        val intent = Intent(this, CameraActivity::class.java)
+
+        startActivity(intent)
+    }
+
+    // Método que se llama cuando el usuario responde a la solicitud de permisos
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -113,9 +107,12 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Verificar si el usuario concedió los permisos
             if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Si los permisos fueron concedidos, abrimos la actividad
                 openGeolocationActivity()
             } else {
+                // Si los permisos fueron denegados, mostramos un mensaje
                 Toast.makeText(
                     this,
                     "Se necesitan permisos de ubicación para esta función",
@@ -125,7 +122,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // No se necesitan métodos para cámara y sensores, se han movido a CameraSensorActivity
+
+    // Constantes utilizadas en la actividad
     companion object {
-        private const val PERMISSION_REQUEST_CODE = 100
+        private const val PERMISSION_REQUEST_CODE = 100 // Código para identificar la solicitud de permisos
     }
 }

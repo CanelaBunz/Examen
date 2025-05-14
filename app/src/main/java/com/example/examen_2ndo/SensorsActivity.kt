@@ -1,5 +1,4 @@
 package com.example.examen_2ndo
-package com.example.camarasensores
 
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -9,7 +8,7 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-class SensorActivity : AppCompatActivity(), SensorEventListener {
+class SensorsActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null

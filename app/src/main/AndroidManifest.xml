@@ -9,7 +9,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Solo necesario para Android 9 y anteriores -->
+    <uses-permission
+            android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+            android:maxSdkVersion="28" />
     <application
         android:usesCleartextTraffic="true"
         android:allowBackup="true"
@@ -45,6 +49,11 @@
 
         <activity
             android:name=".PhpActivity"
+            android:exported="false" />
+
+
+        <activity
+            android:name=".CameraActivity"
             android:exported="false" />
 
         <meta-data
